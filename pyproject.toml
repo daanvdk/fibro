@@ -1,0 +1,15 @@
+[project]
+name = "filebrowser"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "textual[syntax]>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.6",
+    "textual-dev>=1.7.0",
+]

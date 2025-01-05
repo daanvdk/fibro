@@ -1,0 +1,40 @@
+.pane {
+	width: 1fr;
+	height: 1fr;
+	border: solid $foreground;
+}
+
+#search {
+	height: 2;
+	padding: 0 1;
+	color: $foreground;
+	background: transparent;
+	border: hidden;
+	border-bottom: solid $foreground;
+}
+
+Directory > Child {
+	height: 1;
+}
+
+Browser > Child {
+	padding: 0 1;
+}
+
+Browser > Child.selected {
+	background: ansi_bright_black;
+	text-style: bold;
+}
+
+Preview {
+	padding: 0 1;
+}
+
+TextArea {
+	border: none;
+	padding: 0;
+}
+
+.text-area--cursor-line {
+	background: transparent;
+}
