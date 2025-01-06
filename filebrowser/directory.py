@@ -11,7 +11,6 @@ class Directory(Widget):
 
     path = var(None)
     values = var([])
-    show_hidden = var(False)
 
     def __init__(self, path='.'):
         super().__init__()
@@ -22,14 +21,12 @@ class Directory(Widget):
         self.set_values()
         self.refresh(recompose=True)
 
-    def watch_show_hidden(self):
-        if not self.is_mounted:
-            return
+    def on_mount(self):
+        self.watch(self.app, 'show_hidden', self.watch_show_hidden, init=False)
+
+    def watch_show_hidden(self, _):
         self.set_values()
         self.refresh(recompose=True)
-
-    def action_toggle_hidden(self):
-        self.show_hidden = not self.show_hidden
 
     def set_values(self):
         if self.path is None:
@@ -39,7 +36,7 @@ class Directory(Widget):
         dirs = []
         files = []
         for path in self.path.iterdir():
-            if path.name.startswith('.') and not self.show_hidden:
+            if path.name.startswith('.') and not self.app.show_hidden:
                 pass
             elif path.is_dir():
                 dirs.append(f'{path.name}/')

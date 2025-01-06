@@ -26,8 +26,6 @@ class Browser(Directory):
         Binding('down', 'nav_down'),
         Binding('enter', 'select'),
 
-        Binding('alt+h', 'toggle_hidden'),
-
         Binding('alt+c', 'create'),
         Binding('alt+r', 'rename'),
         Binding('alt+d', 'delete'),

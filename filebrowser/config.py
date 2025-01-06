@@ -30,7 +30,7 @@ def get(*keys, default=NO_DEFAULT):
     return value            
 
 
-HELIX = Path(__file__).parent.parent / 'helix'
+HELIX = Path(__file__).parent / 'helix'
 
 
 def load_theme(theme):

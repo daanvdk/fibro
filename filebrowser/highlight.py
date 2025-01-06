@@ -12,7 +12,7 @@ from tree_sitter import Parser
 from . import config
 
 
-QUERIES = Path(__file__).parent / 'queries'
+QUERIES = config.HELIX / 'runtime/queries'
 QUERY_CACHE = {}
 
 

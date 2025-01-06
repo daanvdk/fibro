@@ -15,6 +15,7 @@
 
 Prompt {
 	align: center middle;
+	background: $background 50%;
 }
 
 Prompt > Static {

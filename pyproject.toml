@@ -22,3 +22,13 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 packages = ["filebrowser"]
+
+[tool.hatch.build]
+exclude = [
+    "/filebrowser/helix",
+    "!/filebrowser/helix/LICENSE",
+    "!/filebrowser/helix/theme.toml",
+    "!/filebrowser/helix/base16_theme.toml",
+    "!/filebrowser/helix/runtime/queries",
+    "!/filebrowser/helix/runtime/themes",
+]

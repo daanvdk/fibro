@@ -3,6 +3,7 @@ from pathlib import Path
 from textual.app import App as BaseApp
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.binding import Binding
+from textual.reactive import var
 
 from .config import HELIX_THEME
 from .browser import Browser
@@ -14,9 +15,12 @@ from .utils import show_path, forward_bindings, ForwardMixin
 
 class App(ForwardMixin, BaseApp):
 
+    show_hidden = var(False)
+
     CSS_PATH = 'app.tcss'
     BINDINGS = [
         Binding('escape', 'quit'),
+        Binding('alt+h', 'toggle_hidden'),
         *forward_bindings(SimpleInput, '#search'),
         *forward_bindings(Browser),
     ]
@@ -49,6 +53,9 @@ class App(ForwardMixin, BaseApp):
         browser = self.query_one(Browser)
         self.set_title(browser.path)
         self.watch(browser, 'path', self.set_title)
+
+    def action_toggle_hidden(self):
+        self.show_hidden = not self.show_hidden
 
     def on_key(self, event):
         if self.screen.id == '_default':
