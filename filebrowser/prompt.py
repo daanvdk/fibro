@@ -3,29 +3,31 @@ from textual.binding import Binding
 from textual.widgets import Static
 
 from .simple_input import SimpleInput
+from .utils import forward_bindings, ForwardMixin
 
 
-class Prompt(ModalScreen):
+class Prompt(ForwardMixin, ModalScreen):
 
     BINDINGS = [
         Binding('escape', 'close'),
         Binding('enter', 'accept'),
+        *forward_bindings(SimpleInput),
     ]
 
-    def __init__(self, label, default, callback):
+    def __init__(self, label, default):
         super().__init__()
         self.label = label
         self.default = default
-        self.callback = callback
 
     def action_close(self):
-        self.app.pop_screen()
-        self.app.query_one('#search').focus()
+        self.dismiss(None)
 
     def action_accept(self):
         value = self.query_one(SimpleInput).value
-        self.action_close()
-        self.callback(value)
+        self.dismiss(value)
+
+    def on_key(self, event):
+        self.query_one('SimpleInput').on_key(event)
 
     def compose(self):
         yield Static(self.label)

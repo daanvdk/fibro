@@ -15,7 +15,6 @@ class SimpleInput(Widget):
 
     value = reactive('')
     cursor = reactive(0)
-    can_focus = True
 
     def __init__(self, value='', **kwargs):
         super().__init__(**kwargs)
@@ -42,7 +41,7 @@ class SimpleInput(Widget):
         self.value = self.value[:self.cursor - 1] + self.value[self.cursor:]
         self.cursor -= 1
 
-    async def handle_key(self, event):
+    def on_key(self, event):
         if not event.is_printable:
             return
 

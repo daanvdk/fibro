@@ -23,8 +23,13 @@ class Directory(Widget):
         self.refresh(recompose=True)
 
     def watch_show_hidden(self):
+        if not self.is_mounted:
+            return
         self.set_values()
         self.refresh(recompose=True)
+
+    def action_toggle_hidden(self):
+        self.show_hidden = not self.show_hidden
 
     def set_values(self):
         if self.path is None:

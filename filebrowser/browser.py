@@ -4,6 +4,7 @@ import shutil
 
 from textual.reactive import var, reactive
 from textual.fuzzy import Matcher
+from textual.binding import Binding
 
 from rich.style import Style
 from rich.text import Text
@@ -20,12 +21,32 @@ class Browser(Directory):
     selected = var(0)
     selected_value = var(None)
 
+    BINDINGS = [
+        Binding('up', 'nav_up'),
+        Binding('down', 'nav_down'),
+        Binding('enter', 'select'),
+
+        Binding('alt+h', 'toggle_hidden'),
+
+        Binding('alt+c', 'create'),
+        Binding('alt+r', 'rename'),
+        Binding('alt+d', 'delete'),
+
+        Binding('alt+p', 'go_prev'),
+        Binding('alt+n', 'go_next'),
+        Binding('alt+shift+p', 'go_prev_full'),
+        Binding('alt+shift+n', 'go_next_full'),
+    ]
+
     def __init__(self, path='.', autoselect=None):
         self.autoselect = autoselect
+        self.prev_stack = []
+        self.next_stack = []
         super().__init__(path)
 
     def on_mount(self):
-        self.watch(self.screen.query_one('#search'), 'value', self.set_filter)
+        search = self.screen.query_one('#search')
+        self.watch(search, 'value', self.set_filter, init=False)
 
     def set_filter(self, filter):
         if filter:
@@ -78,6 +99,39 @@ class Browser(Directory):
     def action_nav_down(self):
         self.selected = (self.selected + 1) % len(self.values)
 
+    def action_push(self, path):
+        self.prev_stack.append((self.path, self.selected_value))
+        self.next_stack.clear()
+        self.path = path
+
+    def action_go_prev(self):
+        try:
+            path, autoselect = self.prev_stack.pop()
+        except IndexError:
+            return
+
+        self.next_stack.append((self.path, self.selected_value))
+        self.autoselect = autoselect
+        self.path = path
+
+    def action_go_next(self):
+        try:
+            path, autoselect = self.next_stack.pop()
+        except IndexError:
+            return
+
+        self.prev_stack.append((self.path, self.selected_value))
+        self.autoselect = autoselect
+        self.path = path
+
+    def action_go_prev_full(self):
+        while self.prev_stack:
+            self.action_go_prev()
+
+    def action_go_next_full(self):
+        while self.next_stack:
+            self.action_go_next()
+
     @property
     def selected_path(self):
         match self.selected_value:
@@ -93,7 +147,7 @@ class Browser(Directory):
             return
 
         if path.is_dir():
-            self.path = path
+            self.action_push(path)
             self.screen.query_one('#search').action_clear()
 
         elif path.is_file():
@@ -109,18 +163,18 @@ class Browser(Directory):
             self.app.refresh()
             self.screen.query_one('Preview').refresh(recompose=True)
 
-    def action_toggle_hidden(self):
-        self.show_hidden = not self.show_hidden
-
     def action_create(self):
         @self.app.prompt('create file or directory')
         def create_name(name):
+            if name is None:
+                return
+
             is_dir = name.endswith('/')
             path = self.path / name
 
             if is_dir:
                 path.mkdir(exist_ok=True, parents=True)
-                self.path = path
+                self.action_push(path)
             else:
                 path.parent.mkdir(exist_ok=True, parents=True)
                 path.touch()
@@ -130,7 +184,7 @@ class Browser(Directory):
                     self.set_values()
                     self.refresh(recompose=True)
                 else:
-                    self.path = path.parent
+                    self.action_push(path.parent)
 
     def action_rename(self):
         if self.selected_value in (None, '..'):
@@ -139,6 +193,9 @@ class Browser(Directory):
 
         @self.app.prompt(f'rename {self.selected_value}', default=path.name)
         def rename(name):
+            if name is None:
+                return
+
             name = name.rstrip('/')
             is_dir = path.is_dir()
 
