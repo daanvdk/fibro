@@ -1,5 +1,4 @@
 from collections import Counter
-from pathlib import Path
 
 from textual.widget import Widget
 from textual.widgets import Static
@@ -231,4 +230,4 @@ class Highlight(Widget):
                     column = 0
                 else:
                     curr_line.append_text(Text(lines[line][column:next_column], style=style))
-                    column = next_column                
+                    column = next_column

@@ -22,13 +22,19 @@ class Browser(Directory):
     selected_value = var(None)
 
     BINDINGS = [
-        Binding('up', 'nav_up'),
-        Binding('down', 'nav_down'),
+        Binding('up', 'up'),
+        Binding('down', 'down'),
+        Binding('shift+up', 'up(True)'),
+        Binding('shift+down', 'down(True)'),
         Binding('enter', 'select'),
 
         Binding('alt+c', 'create'),
         Binding('alt+r', 'rename'),
+        Binding('alt+m', 'move'),
+        Binding('alt+shift+m', 'move(True)'),
         Binding('alt+d', 'delete'),
+
+        Binding('alt+a', 'mark_all'),
 
         Binding('alt+p', 'go_prev'),
         Binding('alt+n', 'go_next'),
@@ -40,6 +46,7 @@ class Browser(Directory):
         self.autoselect = autoselect
         self.prev_stack = []
         self.next_stack = []
+        self.marked = set()
         super().__init__(path)
 
     def on_mount(self):
@@ -91,10 +98,14 @@ class Browser(Directory):
         except ValueError:
             self.selected = 0
 
-    def action_nav_up(self):
+    def action_up(self, mark=False):
+        if mark:
+            self.action_mark()
         self.selected = (self.selected - 1) % len(self.values)
 
-    def action_nav_down(self):
+    def action_down(self, mark=False):
+        if mark:
+            self.action_mark()
         self.selected = (self.selected + 1) % len(self.values)
 
     def action_push(self, path):
@@ -139,6 +150,14 @@ class Browser(Directory):
                 return self.path.parent
             case value:
                 return self.path / value
+    @property
+    def selected_paths(self):
+        if self.marked:
+            return self.marked
+        elif path := self.selected_path:
+            return {path}
+        else:
+            return set()
 
     def action_select(self):
         if not (path := self.selected_path):
@@ -161,74 +180,153 @@ class Browser(Directory):
             self.app.refresh()
             self.screen.query_one('Preview').refresh(recompose=True)
 
-    def action_create(self):
-        @self.app.prompt('create file or directory')
-        def create_name(name):
-            if name is None:
-                return
+    async def action_create(self):
+        name = await self.app.prompt('create file or directory')
+        if name is None:
+            return
 
-            is_dir = name.endswith('/')
-            path = self.path / name
+        is_dir = name.endswith('/')
+        path = self.path / name
 
-            if is_dir:
-                path.mkdir(exist_ok=True, parents=True)
-                self.action_push(path)
+        if is_dir:
+            path.mkdir(exist_ok=True, parents=True)
+            self.action_push(path)
+        else:
+            path.parent.mkdir(exist_ok=True, parents=True)
+            path.touch()
+
+            self.autoselect = path.name
+            if self.path == path.parent:
+                self.set_values()
+                self.refresh(recompose=True)
             else:
-                path.parent.mkdir(exist_ok=True, parents=True)
-                path.touch()
+                self.action_push(path.parent)
 
-                self.autoselect = path.name
-                if self.path == path.parent:
-                    self.set_values()
-                    self.refresh(recompose=True)
-                else:
-                    self.action_push(path.parent)
-
-    def action_rename(self):
+    async def action_rename(self):
         if self.selected_value in (None, '..'):
             return
         path = self.selected_path
 
-        @self.app.prompt(f'rename {self.selected_value}', default=path.name)
-        def rename(name):
-            if name is None:
-                return
+        name = await self.app.prompt(f'rename {self.selected_value}', default=path.name)
+        if name is None:
+            return
 
-            name = name.rstrip('/')
-            is_dir = path.is_dir()
+        name = name.rstrip('/')
+        is_dir = path.is_dir()
 
-            path.rename(name)
+        path.rename(path.parent / name)
 
-            if is_dir:
-                name += '/'
+        if is_dir:
+            name += '/'
 
-            self.values[self.selected] = name
-            self.set_reactive(Browser.selected_value, name)
+        self.values[self.selected] = name
+        self.set_reactive(Browser.selected_value, name)
 
-            child = self.children[self.selected]
-            child.value = name
-            child.text = self.render_value(name)
-            child.refresh()
+        child = self.children[self.selected]
+        child.value = name
+        child.text = self.render_value(name)
+        child.refresh()
+
+    async def action_move(self, copy=False):
+        if not (paths := self.selected_paths):
+            return
+
+        if any(path == self.path or path in self.path.parents for path in paths):
+            # TODO show why
+            return
+
+        for path in paths:
+            dest = self.path / path.name
+            if dest == path and not copy:
+                continue
+
+            while dest.exists():
+                new_name = await self.app.prompt(f'{dest.name} already exists, provide new name')
+                if new_name is None:
+                    break
+                elif new_name == dest.name:
+                    if dest == path:
+                        break
+                    elif dest.is_dir():
+                        shutil.rmtree(dest)
+                    else:
+                        dest.unlink()
+                else:
+                    dest = dest.parent / new_name
+            else:
+                if not copy:
+                    path.rename(dest)
+                elif path.is_dir():
+                    shutil.copytree(path, dest)
+                else:
+                    shutil.copy(path, dest)
+
+        self.marked.clear()
+        self.set_values()
+        self.refresh(recompose=True)
 
     def action_delete(self):
+        if not (paths := self.selected_paths):
+            return
+
+        if any(path == self.path or path in self.path.parents for path in paths):
+            # TODO show why
+            return
+
+        for path in paths:
+            if path.parent == self.path:
+                value = path.name
+                if path.is_dir():
+                    value += '/'
+
+                index = self.values.index(value)
+                self.values.pop(index)
+
+                if index < self.selected:
+                    self.selected -= 1
+                elif index > self.selected:
+                    pass
+                elif not self.values:
+                    self.selected_value = None
+                elif self.selected == len(self.values):
+                    self.selected -= 1
+                else:
+                    self.selected_value = self.values[self.selected]
+
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+
+        self.marked.clear()
+        self.refresh(recompose=True)
+
+    def action_mark(self):
         if self.selected_value in (None, '..'):
             return
         path = self.selected_path
 
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
+        try:
+            self.marked.remove(path)
+        except KeyError:
+            self.marked.add(path)
 
-        self.values.pop(self.selected)
-        if not self.values:
-            self.selected_value = None
-        elif self.selected == len(self.values):
-            self.selected -= 1
-        else:
-            self.selected_value = self.values[self.selected]
+        self.children[self.selected].refresh()
 
-        self.refresh(recompose=True)
+    def action_mark_all(self):
+        paths = {
+            self.path / value
+            for value in self.values
+            if value != '..'
+        }
+
+        if paths - self.marked:
+            self.marked.update(paths)
+        else:
+            self.marked.difference_update(paths)
+
+        for child in self.children:
+            child.refresh()
 
     class Child(Directory.Child):
 
@@ -246,9 +344,16 @@ class Browser(Directory):
             else:
                 self.remove_class('selected')
 
+        @property
+        def marked(self):
+            path = self.parent.path / self.value
+            return path in self.parent.marked
+
         def render(self):
-            text = super().render()
-            if self.selected:
-                return Text('> ').append_text(text)
-            else:
-                return Text('  ').append_text(text)
+            text = Text('> ' if self.selected else '  ')
+
+            if self.marked:
+                text.append_text(Text('* ', style=MATCH_STYLE))
+
+            text.append_text(super().render())
+            return text

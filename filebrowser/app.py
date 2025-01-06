@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from textual.app import App as BaseApp
@@ -59,13 +60,15 @@ class App(ForwardMixin, BaseApp):
 
     def on_key(self, event):
         if self.screen.id == '_default':
-            self.query_one('#search').on_key(event)
+            if event.key == 'tab':
+                self.query_one(Browser).action_mark()
+            else:
+                self.query_one('#search').on_key(event)
 
     def set_title(self, path):
         self.console.set_window_title(f'fb: {show_path(path)}')
 
-    def prompt(self, label, *, default='', callback=None):
-        if callback is None:
-            return lambda callback: self.prompt(label, default=default, callback=callback)
-
-        self.push_screen(Prompt(label, default), callback)
+    async def prompt(self, label, *, default=''):
+        fut = asyncio.get_running_loop().create_future()
+        self.push_screen(Prompt(label, default), fut.set_result)
+        return await fut
