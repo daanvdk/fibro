@@ -6,9 +6,10 @@ from textual.widgets import Static
 from textual._tree_sitter import BUILTIN_LANGUAGES
 
 from rich.text import Text
-from rich.style import Style
 
 from tree_sitter import Parser
+
+from . import config
 
 
 QUERIES = Path(__file__).parent / 'queries'
@@ -50,56 +51,6 @@ def event_key(event):
     return (pos, EVENT_TYPE_ORDER[event_type])
 
 
-KEY_STYLES = {
-    'attribute': Style(color='#eed49f'),
-    'type': Style(color='#eed49f'),
-    'type.enum.variant': Style(color='#8bd5ca'),
-    'constructor': Style(color='#7dc4e4'),
-    'constant': Style(color='#f5a97f'),
-    'constant.character': Style(color='#8bd5ca'),
-    'constant.character.escape': Style(color='#f5bde6'),
-    'string': Style(color='#a6da95'),
-    'string.regexp': Style(color='#f5bde6'),
-    'string.special': Style(color='#8aadf4'),
-    'string.special.symbol': Style(color='#ed8796'),
-    'comment': Style(color='#939ab7', italic=True),
-    'variable': Style(color='#cad3f5'),
-    'variable.parameter': Style(color='#ee99a0', italic=True),
-    'variable.builtin': Style(color='#ed8796'),
-    'variable.other.member': Style(color='#8aadf4'),
-    'label': Style(color='#7dc4e4'),
-    'punctuation': Style(color='#939ab7'),
-    'punctuation.special': Style(color='#91d7e3'),
-    'keyword': Style(color='#c6a0f6'),
-    'keyword.control.conditional': Style(color='#c6a0f6', italic=True),
-    'operator': Style(color='#91d7e3'),
-    'function': Style(color='#8aadf4'),
-    'function.macro': Style(color='#c6a0f6'),
-    'tag': Style(color='#8aadf4'),
-    'namespace': Style(color='#eed49f', italic=True),
-    'special': Style(color='#8aadf4'),
-
-    'markup.heading.marker': Style(color='#f5a97f', bold=True),
-    'markup.heading.1': Style(color='#b7bdf8'),
-    'markup.heading.2': Style(color='#c6a0f6'),
-    'markup.heading.3': Style(color='#a6da95'),
-    'markup.heading.4': Style(color='#eed49f'),
-    'markup.heading.5': Style(color='#f5bde6'),
-    'markup.heading.6': Style(color='#8bd5ca'),
-    'markup.list': Style(color='#c6a0f6'),
-    'markup.list.unchecked': Style(color='#939ab7'),
-    'markup.list.checked': Style(color='#a6da95'),
-    'markup.bold': Style(bold=True),
-    'markup.italic': Style(italic=True),
-    'markup.link.url': Style(color='#8aadf4', italic=True, underline=True),
-    'markup.link.text': Style(color='#8aadf4'),
-    'markup.raw': Style(color='#f0c6c6'),
-
-    'ui.linenr': Style(color='#494d64'),
-    'ui.virtual.indent-guide': Style(color='#363a4f'),
-}
-
-
 class Highlight(Widget):
 
     def __init__(self, content, language):
@@ -133,7 +84,7 @@ class Highlight(Widget):
 
         indent_text = Text(
             '│' + indent.replace('\t', '    ')[1:],
-            style=get_style(['ui.virtual.indent-guide']),
+            style=config.get_style('ui.virtual.indent-guide'),
         )
 
         # Fix up indent of empty lines by matching them with the lowest indent
@@ -199,10 +150,10 @@ class Highlight(Widget):
                     return definitions[reference][-1]
                 except KeyError:
                     pass
-            return get_style(key for _, key in sorted(highlights))
+            return config.get_style(key for _, key in sorted(highlights))
 
         max_line_len = len(str(len(lines)))
-        linenr_style = get_style(['ui.linenr'])
+        linenr_style = config.get_style('ui.linenr')
         curr_line = Text()
 
         end_point = (len(lines), 0)
@@ -260,7 +211,7 @@ class Highlight(Widget):
                 if column == 0:
                     # Add line number
                     curr_line.append_text(Text(
-                        str(line).rjust(max_line_len) + ' ',
+                        str(line + 1).rjust(max_line_len) + ' ',
                         style=linenr_style,
                     ))
                     # Add indent
@@ -281,25 +232,3 @@ class Highlight(Widget):
                 else:
                     curr_line.append_text(Text(lines[line][column:next_column], style=style))
                     column = next_column                
-
-
-def get_style(highlights):
-    for key in highlights:
-        for subkey in all_keys(key):
-            try:
-                return KEY_STYLES[subkey]
-            except KeyError:
-                pass
-    return Style()
-
-
-def all_keys(key):
-    yield key
-    key_len = len(key)
-
-    while True:
-        try:
-            key_len = key.rindex('.', 0, key_len)
-        except ValueError:
-            break
-        yield key[:key_len]

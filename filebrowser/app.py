@@ -4,6 +4,7 @@ from textual.app import App as BaseApp
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.binding import Binding
 
+from .config import HELIX_THEME
 from .browser import Browser
 from .preview import Preview
 from .prompt import Prompt
@@ -35,7 +36,8 @@ class App(ForwardMixin, BaseApp):
                 yield Preview()
 
     def on_mount(self):
-        self.theme = 'textual-ansi'
+        self.register_theme(HELIX_THEME)
+        self.theme = 'helix'
 
         browser = self.query_one(Browser)
         self.set_title(browser.path)

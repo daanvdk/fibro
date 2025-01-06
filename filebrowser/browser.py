@@ -6,13 +6,13 @@ from textual.reactive import var, reactive
 from textual.fuzzy import Matcher
 from textual.binding import Binding
 
-from rich.style import Style
 from rich.text import Text
 
+from . import config
 from .directory import Directory
 
 
-MATCH_STYLE = Style(color='#8aadf4', bold=True)
+MATCH_STYLE = config.get_style('special')
 
 
 class Browser(Directory):
