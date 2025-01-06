@@ -1,13 +1,10 @@
 from pathlib import Path
 
 from textual.widget import Widget
+from textual.widgets import Static
 from textual.reactive import var
 
-from rich.style import Style
 from rich.text import Text
-
-
-MATCH_STYLE = Style(color='#8aadf4', bold=True)
 
 
 class Directory(Widget):
@@ -18,7 +15,8 @@ class Directory(Widget):
 
     def __init__(self, path='.'):
         super().__init__()
-        self.path = Path(path).resolve()
+        self.set_reactive(Directory.path, Path(path).resolve())
+        self.set_values()
 
     def watch_path(self):
         self.set_values()
@@ -50,6 +48,8 @@ class Directory(Widget):
     def compose(self):
         for value in self.values:
             yield self.Child(value, self.render_value(value))
+        if not self.values:
+            yield Static('')
 
     def render_value(self, value):
         return Text(value)

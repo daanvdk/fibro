@@ -20,6 +20,7 @@ class Prompt(ModalScreen):
 
     def action_close(self):
         self.app.pop_screen()
+        self.app.query_one('#search').focus()
 
     def action_accept(self):
         value = self.query_one(SimpleInput).value

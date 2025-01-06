@@ -22,7 +22,7 @@ Prompt > Static {
 	text-align: center;
 }
 
-Prompt > Input {
+Prompt > SimpleInput {
 	width: 50%;
 	height: 3;
 	padding: 0 1;
@@ -33,9 +33,6 @@ Prompt > Input {
 
 Directory > Child {
 	height: 1;
-}
-
-Browser > Child {
 	padding: 0 1;
 }
 
@@ -44,13 +41,8 @@ Browser > Child.selected {
 	text-style: bold;
 }
 
-Preview {
+Preview Static {
 	padding: 0 1;
-}
-
-TextArea {
-	border: none;
-	padding: 0;
 }
 
 .text-area--cursor-line {

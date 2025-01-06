@@ -19,7 +19,10 @@ class Browser(Directory):
     matcher = None
     selected = var(0)
     selected_value = var(None)
-    created = None
+
+    def __init__(self, path='.', autoselect=None):
+        self.autoselect = autoselect
+        super().__init__(path)
 
     def on_mount(self):
         self.watch(self.screen.query_one('#search'), 'value', self.set_filter)
@@ -43,9 +46,9 @@ class Browser(Directory):
                 reverse=True,
             )
 
-        if self.created:
-            self.selected = self.values.index(self.created)
-            self.created = None
+        if self.autoselect:
+            self.action_select_value(self.autoselect)
+            self.autoselect = None
         else:
             self.selected = 0
 
@@ -62,6 +65,12 @@ class Browser(Directory):
             return self.matcher.highlight(value)
         else:
             return Text(value)
+
+    def action_select_value(self, value):
+        try:
+            self.selected = self.values.index(value)
+        except ValueError:
+            self.selected = 0
 
     def action_nav_up(self):
         self.selected = (self.selected - 1) % len(self.values)
@@ -85,7 +94,7 @@ class Browser(Directory):
 
         if path.is_dir():
             self.path = path
-            self.screen.query_one('Input').value = ''
+            self.screen.query_one('#search').action_clear()
 
         elif path.is_file():
             editor = (
@@ -111,13 +120,13 @@ class Browser(Directory):
 
             if is_dir:
                 path.mkdir(exist_ok=True, parents=True)
-                path = self.path
+                self.path = path
             else:
                 path.parent.mkdir(exist_ok=True, parents=True)
                 path.touch()
 
-                self.created = path.name
-                if path.parent == self.path:
+                self.autoselect = path.name
+                if self.path == path.parent:
                     self.set_values()
                     self.refresh(recompose=True)
                 else:
@@ -128,7 +137,7 @@ class Browser(Directory):
             return
         path = self.selected_path
 
-        @self.app.prompt(f'rename {path.name}', default=path.name)
+        @self.app.prompt(f'rename {self.selected_value}', default=path.name)
         def rename(name):
             name = name.rstrip('/')
             is_dir = path.is_dir()
@@ -138,13 +147,13 @@ class Browser(Directory):
             if is_dir:
                 name += '/'
 
+            self.values[self.selected] = name
+            self.set_reactive(Browser.selected_value, name)
+
             child = self.children[self.selected]
             child.value = name
             child.text = self.render_value(name)
             child.refresh()
-
-            self.values[self.selected] = name
-            self.selected_value = name
 
     def action_delete(self):
         if self.selected_value in (None, '..'):

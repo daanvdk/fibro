@@ -1,7 +1,8 @@
 from textual.widget import Widget
-from textual.widgets import TextArea, Static
+from textual.widgets import Static
 
 from .directory import Directory
+from .highlight import Highlight
 
 
 LANGUAGES = {
@@ -61,18 +62,17 @@ class Preview(Widget):
 
     def compose(self):
         if self.path is None:
-            return
+            yield Static('')
 
         elif self.path.is_dir():
             yield Directory(self.path)
 
         elif self.path.is_file():
             try:
-                text = self.path.read_text()
+                content = self.path.read_text()
             except ValueError:
-                text = '<binary>'
-                language = None
+                yield Static('<binary>')
             else:
                 language = LANGUAGES.get(self.path.suffix)
-            yield TextArea(text, language=language, read_only=True)
+                yield Highlight(content, language)
 

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from textual.app import App as BaseApp
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.binding import Binding
@@ -21,17 +23,24 @@ class App(BaseApp):
         Binding('enter', 'select'),
 
         Binding('alt+h', 'toggle_hidden'),
+        Binding('alt+r', 'goto_root'),
+
         Binding('alt+c', 'create'),
         Binding('alt+r', 'rename'),
         Binding('alt+d', 'delete'),
     ]
+
+    def __init__(self, path='.', selected=None):
+        super().__init__()
+        self.init_path = Path(path).resolve()
+        self.init_selected = selected
 
     def compose(self):
         with Horizontal():
             with Vertical(classes='pane'):
                 yield SimpleInput(id='search')
                 with VerticalScroll():
-                    yield Browser()
+                    yield Browser(self.init_path, self.init_selected)
             with VerticalScroll(classes='pane'):
                 yield Preview()
 
@@ -41,6 +50,12 @@ class App(BaseApp):
         browser = self.query_one(Browser)
         self.set_title(browser.path)
         self.watch(browser, 'path', self.set_title)
+
+        if self.init_selected is not None:
+            try:
+                browser.selected = browser.values.index(self.init_selected)
+            except ValueError:
+                pass
 
     def set_title(self, path):
         self.console.set_window_title(f'fb: {show_path(path)}')
@@ -56,6 +71,14 @@ class App(BaseApp):
 
     def action_toggle_hidden(self):
         self.query_one(Browser).action_toggle_hidden()
+
+    def action_goto_root(self):
+        browser = self.query_one(Browser)
+        if browser.path == self.init_path:
+            browser.action_select_value(self.init_selected)
+        else:
+            browser.autoselect = self.init_selected
+            browser.path = self.init_path
 
     def action_create(self):
         self.query_one(Browser).action_create()
