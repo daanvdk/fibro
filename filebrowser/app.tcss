@@ -13,6 +13,24 @@
 	border-bottom: solid $foreground;
 }
 
+Prompt {
+	align: center middle;
+}
+
+Prompt > Static {
+	width: 50%;
+	text-align: center;
+}
+
+Prompt > Input {
+	width: 50%;
+	height: 3;
+	padding: 0 1;
+	color: $foreground;
+	background: transparent;
+	border: solid $foreground;
+}
+
 Directory > Child {
 	height: 1;
 }
@@ -22,7 +40,7 @@ Browser > Child {
 }
 
 Browser > Child.selected {
-	background: ansi_bright_black;
+	background: #363a4f;
 	text-style: bold;
 }
 
