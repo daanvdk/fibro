@@ -21,10 +21,17 @@ class App(ForwardMixin, BaseApp):
         *forward_bindings(Browser),
     ]
 
-    def __init__(self, path='.', selected=None):
+    def __init__(self, path='.'):
         super().__init__()
-        self.init_path = Path(path).resolve()
-        self.init_selected = selected
+
+        path = Path(path).resolve()
+
+        if path.is_dir():
+            self.init_path = path
+            self.init_selected = None
+        else:
+            self.init_path = path.parent
+            self.init_selected = path.name
 
     def compose(self):
         with Horizontal():
