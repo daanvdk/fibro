@@ -32,3 +32,5 @@ exclude = [
     "!/filebrowser/helix/runtime/queries",
     "!/filebrowser/helix/runtime/themes",
 ]
+
+[tool.hatch.build.hooks.custom]
