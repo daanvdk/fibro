@@ -32,5 +32,3 @@ exclude = [
     "!/fibro/helix/runtime/queries",
     "!/fibro/helix/runtime/themes",
 ]
-
-[tool.hatch.build.hooks.custom]
