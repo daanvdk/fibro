@@ -1,3 +1,5 @@
+import subprocess
+
 from textual.widget import Widget
 from textual.widgets import Static
 
@@ -69,10 +71,22 @@ class Preview(Widget):
 
         elif self.path.is_file():
             try:
-                content = self.path.read_text()
+                new_content = self.path.read_text()
             except ValueError:
                 yield Static('<binary>')
             else:
+                browser = self.app.query_one('Browser')
+                if browser.git_root:
+                    git_path = self.path.relative_to(browser.git_root)
+                    res = subprocess.run(
+                        ['git', 'show', f'HEAD:{git_path}'],
+                        cwd=browser.git_root,
+                        capture_output=True,
+                    )
+                    old_content = res.stdout.decode()
+                else:
+                    old_content = new_content
+
                 language = LANGUAGES.get(self.path.suffix)
-                yield Highlight(content, language)
+                yield Highlight(old_content, new_content, language)
 

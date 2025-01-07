@@ -1,5 +1,6 @@
 from textual.theme import Theme
 
+from rich.text import Text
 from rich.style import Style
 
 import tomllib
@@ -131,3 +132,10 @@ HELIX_THEME = Theme(
     panel=get_style('ui.popup').bgcolor.name,
     dark=True,
 )
+
+
+STATUS_GUTTER = {
+    None: Text(' '),
+    'added': Text('▍', style=get_style('diff.plus')),
+    'changed': Text('▍', style=get_style('diff.delta')),
+}

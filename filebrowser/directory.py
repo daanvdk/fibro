@@ -7,6 +7,8 @@ from textual.reactive import var
 
 from rich.text import Text
 
+from . import config
+
 
 class Directory(Widget):
 
@@ -18,6 +20,7 @@ class Directory(Widget):
 
         self._git_root = None
         self._git_root_path = None
+        self.git_status = {}
 
         self.set_reactive(Directory.path, Path(path).resolve())
         self.set_values()
@@ -68,10 +71,11 @@ class Directory(Widget):
                 cwd=self.path,
                 capture_output=True,
             )
-            for line in res.stdout.decode().split():
+            for line in res.stdout.decode().split('\n'):
                 if not line:
                     continue
                 paths.remove(name_paths[line])
+
 
         dirs = []
         files = []
@@ -84,6 +88,39 @@ class Directory(Widget):
         dirs.sort()
         files.sort()
         self.values = ['..', *dirs, *files]
+        self.set_git_status()
+
+    def set_git_status(self):
+        self.git_status.clear()
+
+        if not self.git_root:
+            return
+
+        res = subprocess.run(
+            ['git', 'ls-files', '-t', '--modified', '--others', '--exclude-standard', '--directory'],
+            cwd=self.path,
+            capture_output=True,
+        )
+        for line in res.stdout.decode().split('\n'):
+            if not line:
+                continue
+            type, name = line.split(' ', 1)
+
+            parts = name.rstrip('/').split('/')
+            if parts == ['.']:
+                for value in self.values:
+                    self.git_status[value] = 'added'
+                break
+
+            path = self.path / parts[0]
+            name = path.name
+            if path.is_dir():
+                name += '/'
+
+            if type == '?' and len(parts) == 1:
+                self.git_status[name] = 'added'
+            else:
+                self.git_status[name] = 'changed'
 
     def compose(self):
         for value in self.values:
@@ -102,4 +139,9 @@ class Directory(Widget):
             self.text = text
 
         def render(self):
-            return self.text
+            git_status = self.parent.git_status.get(self.value)
+
+            text = Text()
+            text.append_text(config.STATUS_GUTTER[git_status])
+            text.append_text(self.text)
+            return text

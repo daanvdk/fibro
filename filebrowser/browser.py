@@ -221,6 +221,7 @@ class Browser(Directory):
 
         self.values[self.selected] = name
         self.set_reactive(Browser.selected_value, name)
+        self.set_git_status()
 
         child = self.children[self.selected]
         child.value = name
@@ -298,6 +299,7 @@ class Browser(Directory):
             else:
                 path.unlink()
 
+        self.set_git_status()
         self.marked.clear()
         self.refresh(recompose=True)
 

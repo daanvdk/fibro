@@ -1,4 +1,5 @@
 from collections import Counter
+from difflib import ndiff
 
 from textual.widget import Widget
 from textual.widgets import Static
@@ -52,16 +53,36 @@ def event_key(event):
 
 class Highlight(Widget):
 
-    def __init__(self, content, language):
+    def __init__(self, old_content, new_content, language):
         super().__init__()
-        self.content = content
+        self.old_content = old_content
+        self.new_content = new_content
         self.language = language
 
     def compose(self):
-        lines = self.content.split('\n')
-
+        lines = self.new_content.split('\n')
         while lines and not lines[-1]:
             lines.pop()
+
+        if self.new_content is self.old_content:
+            git_status = [None for _ in lines]
+        else:
+            old_lines = self.old_content.split('\n')
+            while old_lines and not old_lines[-1]:
+                old_lines.pop()
+
+            git_status = []
+            for line in ndiff(old_lines, lines):
+                match line[0]:
+                    case ' ':
+                        git_status.append(None)
+                    case '+':
+                        git_status.append('added')
+                    case '?':
+                        assert git_status[-1] == 'added'
+                        git_status[-1] = 'changed'
+
+        assert len(git_status) == len(lines)
 
         if not lines:
             yield Static('')
@@ -110,7 +131,7 @@ class Highlight(Widget):
         events = []
 
         if self.language is not None:
-            syntax_tree = Parser(BUILTIN_LANGUAGES[self.language]).parse(self.content.encode())
+            syntax_tree = Parser(BUILTIN_LANGUAGES[self.language]).parse(self.new_content.encode())
 
             if highlights_query := get_query(self.language, 'highlights.scm'):
                 for pattern, captures in highlights_query.matches(syntax_tree.root_node):
@@ -151,7 +172,7 @@ class Highlight(Widget):
                     pass
             return config.get_style(key for _, key in sorted(highlights))
 
-        max_line_len = len(str(len(lines)))
+        max_line_len = max(len(str(len(lines))), 4)
         linenr_style = config.get_style('ui.linenr')
         curr_line = Text()
 
@@ -213,6 +234,8 @@ class Highlight(Widget):
                         str(line + 1).rjust(max_line_len) + ' ',
                         style=linenr_style,
                     ))
+                    # Add diff
+                    curr_line.append_text(config.STATUS_GUTTER[git_status[line]])
                     # Add indent
                     while (
                         lines[line].startswith(indent, column) and
