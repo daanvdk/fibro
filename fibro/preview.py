@@ -79,7 +79,7 @@ class Preview(Widget):
                 if browser.git_root:
                     git_path = self.path.relative_to(browser.git_root)
                     res = subprocess.run(
-                        ['git', 'show', f'HEAD:{git_path}'],
+                        ['git', 'show', f':{git_path}'],
                         cwd=browser.git_root,
                         capture_output=True,
                     )

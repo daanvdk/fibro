@@ -72,15 +72,17 @@ class Highlight(Widget):
                 old_lines.pop()
 
             git_status = []
+            next_line = 'added'
+
             for line in ndiff(old_lines, lines):
                 match line[0]:
                     case ' ':
                         git_status.append(None)
                     case '+':
-                        git_status.append('added')
+                        git_status.append(next_line)
+                        next_line = 'added'
                     case '?':
-                        assert git_status[-1] == 'added'
-                        git_status[-1] = 'changed'
+                        next_line = 'changed'
 
         assert len(git_status) == len(lines)
 

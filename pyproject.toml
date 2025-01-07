@@ -1,16 +1,16 @@
 [project]
-name = "filebrowser"
+name = "fibro"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-packages = ["filebrowser"]
+packages = ["fibro"]
 dependencies = [
     "textual[syntax]>=1.0.0",
 ]
 
 [project.scripts]
-fb = "filebrowser.__main__:main"
+fb = "fibro.__main__:main"
 
 [dependency-groups]
 dev = [
@@ -21,16 +21,16 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-packages = ["filebrowser"]
+packages = ["fibro"]
 
 [tool.hatch.build]
 exclude = [
-    "/filebrowser/helix",
-    "!/filebrowser/helix/LICENSE",
-    "!/filebrowser/helix/theme.toml",
-    "!/filebrowser/helix/base16_theme.toml",
-    "!/filebrowser/helix/runtime/queries",
-    "!/filebrowser/helix/runtime/themes",
+    "/fibro/helix",
+    "!/fibro/helix/LICENSE",
+    "!/fibro/helix/theme.toml",
+    "!/fibro/helix/base16_theme.toml",
+    "!/fibro/helix/runtime/queries",
+    "!/fibro/helix/runtime/themes",
 ]
 
 [tool.hatch.build.hooks.custom]

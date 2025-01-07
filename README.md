@@ -1,4 +1,4 @@
-# FileBrowser
+# FiBro
 A fuzzy search oriented file browser.
 
 This basically tries to resemble what it would be like if
@@ -38,6 +38,10 @@ the file by default.
 - `alt+shift+p` goes all the way back in history
 - `alt+shift+n` goes all the way forward in history
 - any other form of typing changes the current fuzzy search
+
+### Installation
+FiBro is on PyPI as `fibro`. The recommended way to install it is with `uv`
+by running `uv tool install fibro`.
 
 ## Configuration
 Since this filebrowser is very much aimed at helix users it reuses the config
