@@ -143,5 +143,8 @@ class Directory(Widget):
 
             text = Text()
             text.append_text(config.STATUS_GUTTER[git_status])
-            text.append_text(self.text)
+            self.render_name(text)
             return text
+
+        def render_name(self, text):
+            text.append_text(self.text)

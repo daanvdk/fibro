@@ -98,7 +98,7 @@ wheels = [
 ]
 
 [[package]]
-name = "filebrowser"
+name = "fibro"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

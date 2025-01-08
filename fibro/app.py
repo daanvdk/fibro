@@ -60,10 +60,13 @@ class App(ForwardMixin, BaseApp):
 
     def on_key(self, event):
         if self.screen.id == '_default':
-            if event.key == 'tab':
-                self.query_one(Browser).action_mark()
-            else:
-                self.query_one('#search').on_key(event)
+            match event.key:
+                case 'tab':
+                    self.query_one(Browser).action_down(True)
+                case 'shift+tab':
+                    self.query_one(Browser).action_up(True)
+                case _:
+                    self.query_one('#search').on_key(event)
 
     def set_title(self, path):
         self.console.set_window_title(f'fb: {show_path(path)}')

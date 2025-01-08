@@ -24,22 +24,20 @@ class Browser(Directory):
     BINDINGS = [
         Binding('up', 'up'),
         Binding('down', 'down'),
-        Binding('shift+up', 'up(True)'),
-        Binding('shift+down', 'down(True)'),
         Binding('enter', 'select'),
+
+        Binding('tab', 'down(True)'),
+        Binding('shift+tab', 'up(True)'),
+        Binding('alt+a', 'mark_all'),
 
         Binding('alt+c', 'create'),
         Binding('alt+r', 'rename'),
         Binding('alt+m', 'move'),
-        Binding('alt+shift+m', 'move(True)'),
+        Binding('alt+y', 'move(True)'),
         Binding('alt+d', 'delete'),
-
-        Binding('alt+a', 'mark_all'),
 
         Binding('alt+p', 'go_prev'),
         Binding('alt+n', 'go_next'),
-        Binding('alt+shift+p', 'go_prev_full'),
-        Binding('alt+shift+n', 'go_next_full'),
     ]
 
     def __init__(self, path='.', autoselect=None):
@@ -353,9 +351,10 @@ class Browser(Directory):
 
         def render(self):
             text = Text('> ' if self.selected else '  ')
-
-            if self.marked:
-                text.append_text(Text('* ', style=MATCH_STYLE))
-
             text.append_text(super().render())
             return text
+
+        def render_name(self, text):
+            if self.marked:
+                text.append_text(Text('* ', style=MATCH_STYLE))
+            super().render_name(text)
